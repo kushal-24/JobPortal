@@ -1,6 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import validateEmail from "../utils/helper";
 import {
   Mail,
   Lock,
@@ -24,28 +25,103 @@ function Login() {
     success: false,
   });
 
-  //validation functions
+  const validatePassword = (password) => {
+    if (!password) return "Password is required";
+    if (password.length < 6) return "Password must be at least 6 characters";
+    return "";
+  };
 
-  const validateEmail = (email) => {};
+  // Handle input change
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
-  const validatePassword = (email) => {};
-  const handleInputChange = (e) => {};
-  const validateForm = () => {};
-  const handleSubmit = async (e) => {};
+    // Clear that field's error if it exists
+    if (formState.errors[name]) {
+      setFormState((prev) => ({
+        ...prev,
+        errors: { ...prev.errors, [name]: "" },
+      }));
+    }
+  };
+
+  // Form validation
+  const validateForm = () => {
+    let errors = {
+      email: validateEmail(formData.email),
+      password: validatePassword(formData.password),
+    };
+
+    // Remove empty errors
+    Object.keys(errors).forEach((key) => {
+      if (!errors[key]) delete errors[key];
+    });
+
+    setFormState((prev) => ({ ...prev, errors }));
+    return Object.keys(errors).length === 0;
+  };
+
+  // Handle submit
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validateForm()) return;
+
+    setFormState((prev) => ({ ...prev, loading: true }));
+
+    try {
+      // Simulate login request
+      setTimeout(() => {
+        setFormState((prev) => ({
+          ...prev,
+          loading: false,
+          success: true,
+        }));
+      }, 1500);
+    } catch (error) {
+      setFormState((prev) => ({
+        ...prev,
+        loading: false,
+        errors: { submit: "Login failed. Please try again." },
+      }));
+    }
+  };
+
+  if (formState.success) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center"
+        >
+          <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold">Welcome Back!</h2>
+          <p className="text-gray-600 mt-2">
+            You have successfully been logged in!
+          </p>
+          <p className="text-gray-500 text-sm mt-4">
+            Redirecting to dashboard...
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
-    <div className=" min-h-screen flex items-center bg-gray-50 px-4">
+    <div className=" min-h-screen items-center flex justify-center bg-gray-50 px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-white p-8 rounded-xl shadow-lg w-full max-w-d"
+        className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Welcome Back
-          </h2>
-          <p className="text-gray-600">Sign In to your JobPortal account</p>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
+          <p className="text-gray-600">Sign in to your JobPortal account</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Input */}
@@ -61,11 +137,11 @@ function Login() {
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="Enter your email"
-                className={`w-full pl-10 pr-4 py-3 rounded-lg border 
-                ${formState.errors.email ? "border-red-500" : "border-gray-300"}
-                focus:ring-2
-                focus: ring-blue-500
-                focus:border-transparent transition-colors`}
+                className={`w-full pl-10 pr-4 py-3 rounded-lg border ${
+                  formState.errors.email
+                    ? "border-red-500"
+                    : "border-gray-300"
+                } focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors`}
               />
             </div>
             {formState.errors.email && (
@@ -78,7 +154,9 @@ function Login() {
 
           {/* Password Input */}
           <div>
-            <label className="">Password</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Password
+            </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
@@ -87,15 +165,11 @@ function Login() {
                 value={formData.password}
                 onChange={handleInputChange}
                 placeholder="Enter your password"
-                className={`w-full pl-10 pr-4 py-3 rounded-lg border 
-                ${
+                className={`w-full pl-10 pr-4 py-3 rounded-lg border ${
                   formState.errors.password
                     ? "border-red-500"
                     : "border-gray-300"
-                }
-                focus:ring-2
-                focus: ring-blue-500
-                focus:border-transparent transition-colors`}
+                } focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors`}
               />
               <button
                 type="button"
@@ -108,18 +182,20 @@ function Login() {
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 {formState.showPassword ? (
-                  <Eyeoff className="w-5 h-5" />
+                  <EyeOff className="w-5 h-5" />
                 ) : (
-                  <Eye className=" w-5 h-5" />
+                  <Eye className="w-5 h-5" />
                 )}
               </button>
+            </div>
+            {formState.errors.password && (
               <p className="text-red-500 text-sm mt-1 flex items-center">
                 <AlertCircle className="w-4 h-4 mr-1" />
                 {formState.errors.password}
               </p>
-            </div>
+            )}
           </div>
-         
+
           {/* Submit Error */}
           {formState.errors.submit && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3">
@@ -129,14 +205,15 @@ function Login() {
               </p>
             </div>
           )}
-         
+
           {/* Submit Button */}
           <button
             type="submit"
             disabled={formState.loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg transition-colors hover:bg-gradient-to-r hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-          ></button>
-       
+            className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold py-3 rounded-lg transition-colors hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 flex items-center justify-center"
+          >
+            {formState.loading ? "Loading..." : "Sign In"}
+          </button>
         </form>
       </motion.div>
     </div>
